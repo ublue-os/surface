@@ -31,10 +31,10 @@ RUN wget https://github.com/linux-surface/linux-surface/releases/download/silver
         --remove libwacom \
         --remove libwacom-data \
         --install kernel-surface \
+        --install kernel-surface-devel-matched \
         --install iptsd \
         --install libwacom-surface \
-        --install libwacom-surface-data \
-        --install kernel-devel-matched
+        --install libwacom-surface-data
 
 # Install akmods
 COPY --from=ghcr.io/ublue-os/akmods:surface-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
