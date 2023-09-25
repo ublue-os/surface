@@ -33,7 +33,22 @@ RUN wget https://github.com/linux-surface/linux-surface/releases/download/silver
         --install kernel-surface \
         --install iptsd \
         --install libwacom-surface \
-        --install libwacom-surface-data
+        --install libwacom-surface-data \
+        --install kernel-devel-matched
+
+# Install akmods
+COPY --from=ghcr.io/ublue-os/akmods:surface-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
+# Only run if FEDORA_MAJOR_VERSION is not 39
+RUN if [ ${FEDORA_MAJOR_VERSION} -lt 39 ]; then \
+    rpm-ostree install \
+        kernel-tools \
+        /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
+        /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
+        /tmp/akmods-rpms/kmods/*xone*.rpm \
+        /tmp/akmods-rpms/kmods/*openrazer*.rpm \
+        /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
+        /tmp/akmods-rpms/kmods/*wl*.rpm; \
+fi
 
 # Setup specific files and commands for Silverblue
 RUN if grep -q "silverblue" <<< "${BASE_IMAGE_NAME}"; then \
