@@ -25,7 +25,6 @@ RUN wget https://github.com/linux-surface/linux-surface/releases/download/silver
     rpm-ostree cliwrap install-to-root / && \
     rpm-ostree override replace /tmp/surface-kernel.rpm \
         --remove kernel-core \
-        --remove kernel-devel-matched \
         --remove kernel-modules \
         --remove kernel-modules-extra \
         --remove libwacom \
@@ -62,5 +61,23 @@ RUN /tmp/surface-install.sh && \
     systemctl enable tlp && \
     systemctl enable fprintd && \
     rm -rf /tmp/* /var/* && \    
+    ostree container commit && \
+    mkdir -p /var/tmp && chmod -R 1777 /tmp /var/tmp
+
+FROM surface as surface-nvidia
+
+ARG IMAGE_NAME="${IMAGE_NAME}"
+ARG IMAGE_VENDOR="ublue-os"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME}"
+ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
+ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-38}"
+ARG NVIDIA_MAJOR_VERSION="${NVIDIA_MAJOR_VERSION:-535}"
+
+COPY system_files/nvidia /
+COPY --from=ghcr.io/ublue-os/akmods-nvidia:asus-${FEDORA_MAJOR_VERSION}-${NVIDIA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
+
+RUN /tmp/nvidia-install.sh && \
+    /tmp/nvidia-post-install.sh && \
+    rm -rf /tmp/* /var/* && \
     ostree container commit && \
     mkdir -p /var/tmp && chmod -R 1777 /tmp /var/tmp

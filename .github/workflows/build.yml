@@ -1,7 +1,7 @@
-name: Build Surface
+name: Build Surface images
 on:
   schedule:
-    - cron: '30 09 * * *'  # 10:00am everyday
+    - cron: '00 10 * * *'  # 10:00am everyday
   push:
     branches:
       - main
@@ -24,18 +24,45 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_flavor: [-main, -nvidia]
-        base_name: [surface]
-        base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate, bazzite, bazzite-gnome, bluefin, bluefin-dx]
+        image_flavor: [-nokmods, -nvidia]
+        base_name: [surface, surface-nvidia]
+        base_image_name:
+          - silverblue
+          - kinoite
+          - vauxite
+          - sericea
+          - base
+          - lxqt
+          - mate
+          - bazzite
+          - bazzite-gnome
+          - bluefin
+          - bluefin-dx
+          - onyx
         major_version: [38]
+        nvidia_version: [0, 535]
         include:
           - major_version: 38
             is_latest_version: true
             is_stable_version: true
+          - nvidia_version: 535
+            is_latest_nvidia: true
         exclude:
           # There is no Fedora 37 version of sericea
           - base_image_name: sericea
             major_version: 37
+          - base_image_name: onyx
+            major_version: 37
+          - base_image_name: onyx
+            major_version: 38
+          - base_name: surface
+            nvidia_version: 535
+          - base_name: surface
+            image_flavor: -nvidia
+          - base_name: surface-nvidia
+            nvidia_version: 0
+          - base_name: surface-nvidia
+            image_flavor: -nokmods
     steps:
       # Checkout push-to-registry action GitHub repository
       - name: Checkout Push to Registry action
@@ -44,11 +71,13 @@ jobs:
       - name: Matrix Variables
         run: |
           echo "BASE_IMAGE_NAME=${{ matrix.base_image_name }}" >> $GITHUB_ENV
-          if ! [[ "${{ matrix.base_image_name }}" =~ "bazzite" && "${{ matrix.image_flavor }}" =~ "main" ]] && \
-             ! [[ "${{ matrix.base_image_name }}" =~ "bluefin" && "${{ matrix.image_flavor }}" =~ "main" ]]; then
+          if [[ "${{ matrix.image_flavor }}" =~ "nvidia" ]]; then
+              echo "IMAGE_FLAVOR=-nokmods" >> $GITHUB_ENV
+          elif ! [[ "${{ matrix.base_image_name }}" =~ "bazzite" && "${{ matrix.image_flavor }}" =~ "main" ]] && \
+               ! [[ "${{ matrix.base_image_name }}" =~ "bluefin" && "${{ matrix.image_flavor }}" =~ "main" ]]; then
               echo "IMAGE_FLAVOR=${{ matrix.image_flavor }}" >> $GITHUB_ENV
           fi
-          if [[ "${{ matrix.image_flavor }}" =~ "main" ]]; then
+          if [[ "${{ matrix.image_flavor }}" =~ "nokmods" ]]; then
               echo "IMAGE_NAME=${{ format('{0}-{1}', matrix.base_image_name, matrix.base_name) }}" >> $GITHUB_ENV
           else
               echo "IMAGE_NAME=${{ format('{0}-{1}{2}', matrix.base_image_name, matrix.base_name, matrix.image_flavor) }}" >> $GITHUB_ENV
@@ -60,24 +89,46 @@ jobs:
         run: |
           # Generate a timestamp for creating an image version history
           TIMESTAMP="$(date +%Y%m%d)"
-          MAJOR_VERSION="${{ matrix.major_version }}"
+          VARIANT="${{ 'nvidia' == matrix.image_flavor && format('{0}-{1}', matrix.major_version, matrix.nvidia_version) || format('{0}', matrix.major_version) }}"
+
           COMMIT_TAGS=()
           BUILD_TAGS=()
+
           # Have tags for tracking builds during pull request
           SHA_SHORT="${GITHUB_SHA::7}"
-          COMMIT_TAGS+=("pr-${{ github.event.pull_request.number }}-${MAJOR_VERSION}")
-          COMMIT_TAGS+=("${SHA_SHORT}-${MAJOR_VERSION}")
+          COMMIT_TAGS+=("pr-${{ github.event.number }}-${VARIANT}")
+          COMMIT_TAGS+=("${SHA_SHORT}-${VARIANT}")
+
           if [[ "${{ matrix.is_latest_version }}" == "true" ]] && \
              [[ "${{ matrix.is_stable_version }}" == "true" ]]; then
-              COMMIT_TAGS+=("pr-${{ github.event.pull_request.number }}")
-              COMMIT_TAGS+=("${SHA_SHORT}")
+            if [[ "${{ matrix.image_flavor }}" == "main" ]] || \
+               [[ "${{ matrix.is_latest_nvidia }}" == "true" ]]; then
+                # assume matrix is honestis_latest_nvidia==true only when image_flavor==nvidia
+                COMMIT_TAGS+=("pr-${{ github.event.number }}")
+                COMMIT_TAGS+=("${SHA_SHORT}")
+            fi
           fi
 
-          BUILD_TAGS=("${MAJOR_VERSION}" "${MAJOR_VERSION}-${TIMESTAMP}")
+          BUILD_TAGS=("${VARIANT}")
+
+          if [[ "${{ matrix.is_latest_nvidia }}" == "true" ]]; then
+              BUILD_TAGS+=("${{ matrix.major_version }}-current")
+              BUILD_TAGS+=("${{ matrix.major_version }}")
+          fi
+
+          # Append matching timestamp tags to keep a version history
+          for TAG in "${BUILD_TAGS[@]}"; do
+              BUILD_TAGS+=("${TAG}-${TIMESTAMP}")
+          done
 
           if [[ "${{ matrix.is_latest_version }}" == "true" ]] && \
              [[ "${{ matrix.is_stable_version }}" == "true" ]]; then
-              BUILD_TAGS+=("latest")
+            if [[ "${{ matrix.image_flavor }}" == "main" ]] || \
+               [[ "${{ matrix.is_latest_nvidia }}" == "true" ]]; then
+                # assume matrix is honest: is_latest_nvidia==true only when image_flavor==nvidia
+                BUILD_TAGS+=("${TIMESTAMP}")
+                BUILD_TAGS+=("latest")
+            fi
           fi
 
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -89,16 +140,18 @@ jobs:
           else
               alias_tags=("${BUILD_TAGS[@]}")
           fi
+
           echo "Generated the following build tags: "
           for TAG in "${BUILD_TAGS[@]}"; do
               echo "${TAG}"
           done
+
           echo "alias_tags=${alias_tags[*]}" >> $GITHUB_OUTPUT
 
       - name: Get current Fedora version
         id: labels
         run: |
-            ver=$(skopeo inspect docker://ghcr.io/ublue-os/${{ matrix.base_image_name }}-${{ matrix.image_flavor }}:${{ matrix.major_version }} | jq -r '.Labels["org.opencontainers.image.version"]')
+            ver=$(skopeo inspect docker://ghcr.io/ublue-os/${{ matrix.base_image_name }}-nokmods:${{ matrix.major_version }} | jq -r '.Labels["org.opencontainers.image.version"]')
             echo "VERSION=$ver" >> $GITHUB_OUTPUT
 
       # Build metadata
@@ -111,7 +164,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.version=${{ steps.labels.outputs.VERSION }}
-            org.opencontainers.image.description=Surface is an OCI image derived from Universal Blue that serves as an operating system for Surface laptops.
+            org.opencontainers.image.description=Surface is an OCI image derived from Universal Blue that serves as an operating system for Surface devices.
 
       # Build the image using Buildah action
       - name: Build image
@@ -127,6 +180,7 @@ jobs:
             IMAGE_FLAVOR=${{ env.IMAGE_FLAVOR }}
             BASE_IMAGE_NAME=${{ matrix.base_image_name }}
             FEDORA_MAJOR_VERSION=${{ matrix.major_version }}
+            NVIDIA_MAJOR_VERSION=${{ matrix.nvidia_version }}
           labels: ${{ steps.meta.outputs.labels }}
           oci: false
           extra-args: |
