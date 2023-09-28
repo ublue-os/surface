@@ -31,6 +31,7 @@ RUN wget https://github.com/linux-surface/linux-surface/releases/download/silver
         --remove libwacom \
         --remove libwacom-data \
         --install kernel-surface \
+        --install kernel-surface-devel \
         --install kernel-surface-devel-matched \
         --install iptsd \
         --install libwacom-surface \
