@@ -10,11 +10,7 @@ ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-38}"
 
 # Store a copy of files so we not have to polute
 # every image with image specific files.
-COPY system_files/ /tmp/
-# Copy shared files between all images.
-COPY system_files/shared /
-COPY surface-install.sh /tmp/surface-install.sh
-COPY surface-packages.json /tmp/surface-packages.json
+COPY system_files/shared /tmp
 
 # Add Linux Surface repo
 RUN wget https://pkg.surfacelinux.com/fedora/linux-surface.repo -P /etc/yum.repos.d
