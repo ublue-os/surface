@@ -16,11 +16,9 @@ COPY system_files/shared /
 COPY surface-install.sh /tmp/surface-install.sh
 COPY surface-packages.json /tmp/surface-packages.json
 
-# Add Linux Surface repo
-RUN wget https://pkg.surfacelinux.com/fedora/linux-surface.repo -P /etc/yum.repos.d
-
 # Install Surface kernel
-RUN wget https://github.com/linux-surface/linux-surface/releases/download/silverblue-20201215-1/kernel-20201215-1.x86_64.rpm -O \
+RUN wget https://pkg.surfacelinux.com/fedora/linux-surface.repo -P /etc/yum.repos.d && \
+    wget https://github.com/linux-surface/linux-surface/releases/download/silverblue-20201215-1/kernel-20201215-1.x86_64.rpm -O \
     /tmp/surface-kernel.rpm && \
     rpm-ostree cliwrap install-to-root / && \
     rpm-ostree override replace /tmp/surface-kernel.rpm \
@@ -39,8 +37,13 @@ RUN wget https://github.com/linux-surface/linux-surface/releases/download/silver
 
 # Install akmods
 COPY --from=ghcr.io/ublue-os/akmods:surface-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
+
 # Only run if FEDORA_MAJOR_VERSION is not 39
 RUN if [ ${FEDORA_MAJOR_VERSION} -lt 39 ]; then \
+    for REPO in $(rpm -ql ublue-os-akmods-addons|grep ^"/etc"|grep repo$); do \
+        echo "akmods: enable default entry: ${REPO}" && \
+        sed -i '0,/enabled=0/{s/enabled=0/enabled=1/}' ${REPO} \
+    ; done && \
     rpm-ostree install \
         kernel-tools \
         /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
@@ -48,8 +51,12 @@ RUN if [ ${FEDORA_MAJOR_VERSION} -lt 39 ]; then \
         /tmp/akmods-rpms/kmods/*xone*.rpm \
         /tmp/akmods-rpms/kmods/*openrazer*.rpm \
         /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
-        /tmp/akmods-rpms/kmods/*wl*.rpm; \
-fi
+        /tmp/akmods-rpms/kmods/*wl*.rpm && \
+    for REPO in $(rpm -ql ublue-os-akmods-addons|grep ^"/etc"|grep repo$); do \
+        echo "akmods: disable default entry: ${REPO}" && \
+        sed -i '1,/enabled=1/{s/enabled=1/enabled=0/}' ${REPO} \
+    ; done \
+; fi
 
 # Setup specific files and commands for Silverblue
 RUN if grep -q "silverblue" <<< "${BASE_IMAGE_NAME}"; then \
