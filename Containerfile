@@ -53,7 +53,8 @@ RUN if grep -q "silverblue" <<< "${BASE_IMAGE_NAME}"; then \
 ; fi
 
 # Setup things which are the same for every image
-RUN /tmp/surface-install.sh && \
+RUN /tmp/image-info.sh && \
+    /tmp/surface-install.sh && \
     systemctl enable tlp && \
     systemctl enable fprintd && \
     rm -rf /tmp/* /var/* && \    
@@ -69,10 +70,11 @@ ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-38}"
 ARG NVIDIA_MAJOR_VERSION="${NVIDIA_MAJOR_VERSION:-535}"
 
-COPY system_files/nvidia /
+COPY system_files/shared system_files/nvidia /
 COPY --from=ghcr.io/ublue-os/akmods-nvidia:asus-${FEDORA_MAJOR_VERSION}-${NVIDIA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
 
-RUN /tmp/nvidia-install.sh && \
+RUN /tmp/image-info.sh && \
+    /tmp/nvidia-install.sh && \
     /tmp/nvidia-post-install.sh && \
     rm -rf /tmp/* /var/* && \
     ostree container commit && \
