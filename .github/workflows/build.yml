@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_flavor: [-main, -nvidia]
+        image_flavor: [-main]
         base_name: [surface]
         base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate, bazzite, bazzite-gnome, bluefin, bluefin-dx]
         major_version: [38]
@@ -32,10 +32,6 @@ jobs:
           - major_version: 38
             is_latest_version: true
             is_stable_version: true
-        exclude:
-          # There is no Fedora 37 version of sericea
-          - base_image_name: sericea
-            major_version: 37
     steps:
       # Checkout push-to-registry action GitHub repository
       - name: Checkout Push to Registry action
