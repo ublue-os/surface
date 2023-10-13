@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_flavor: [-main]
+        image_flavor: [-nokmods, -main]
         base_name: [surface]
         base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate]
         major_version: [38]
@@ -32,6 +32,13 @@ jobs:
           - major_version: 38
             is_latest_version: true
             is_stable_version: true
+        exclude:
+          - image_flavor: -nokmods
+            major_version: 39
+          - image_flavor: -main
+            major_version: 38
+          - image_flavor: -main
+            major_version: 37
     steps:
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@v6
@@ -43,7 +50,7 @@ jobs:
       - name: Matrix Variables
         run: |
           echo "BASE_IMAGE_NAME=${{ matrix.base_image_name }}" >> $GITHUB_ENV
-          if [[ "${{ matrix.image_flavor }}" =~ "main" ]]; then
+          if [[ "${{ matrix.image_flavor }}" =~ "nokmods" || "${{ matrix.image_flavor }}" =~ "main" ]]; then
               echo "IMAGE_NAME=${{ format('{0}-{1}', matrix.base_image_name, matrix.base_name) }}" >> $GITHUB_ENV
           else
               echo "IMAGE_NAME=${{ format('{0}-{1}{2}', matrix.base_image_name, matrix.base_name, matrix.image_flavor) }}" >> $GITHUB_ENV
