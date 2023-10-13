@@ -23,14 +23,11 @@ RUN wget https://pkg.surfacelinux.com/fedora/linux-surface.repo -P /etc/yum.repo
     rpm-ostree cliwrap install-to-root / && \
     rpm-ostree override replace /tmp/surface-kernel.rpm \
         --remove kernel-core \
-        --remove kernel-devel-matched \
         --remove kernel-modules \
         --remove kernel-modules-extra \
         --remove libwacom \
         --remove libwacom-data \
         --install kernel-surface \
-        --install kernel-surface-devel \
-        --install kernel-surface-devel-matched \
         --install iptsd \
         --install libwacom-surface \
         --install libwacom-surface-data
