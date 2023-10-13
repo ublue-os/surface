@@ -27,8 +27,11 @@ jobs:
         image_flavor: [-nokmods, -main]
         base_name: [surface]
         base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate]
-        major_version: [38]
+        major_version: [38, 39]
         include:
+          - major_version: 39
+            is_latest_version: true
+            is_stable_version: false
           - major_version: 38
             is_latest_version: true
             is_stable_version: true
