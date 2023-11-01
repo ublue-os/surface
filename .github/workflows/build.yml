@@ -1,7 +1,7 @@
 name: Build Surface
 on:
   schedule:
-    - cron: '30 08 * * *'  # 08:30am everyday
+    - cron: '40 15 * * *'  # 15:40 UTC everyday
   push:
     branches:
       - main
