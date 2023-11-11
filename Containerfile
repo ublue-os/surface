@@ -63,7 +63,6 @@ RUN if grep -q "silverblue" <<< "${BASE_IMAGE_NAME}"; then \
 
 # Setup things which are the same for every image
 RUN /tmp/surface-install.sh && \
-    systemctl enable tlp && \
     systemctl enable fprintd && \
     rm -rf /tmp/* /var/* && \    
     ostree container commit && \
