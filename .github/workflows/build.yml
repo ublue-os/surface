@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_flavor: [-nokmods, -main]
+        image_flavor: [nokmods, main]
         base_name: [surface]
         base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate, onyx]
         major_version: [38, 39]
