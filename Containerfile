@@ -44,7 +44,6 @@ RUN if [ ${FEDORA_MAJOR_VERSION} -lt 39 ]; then \
     rpm-ostree install \
         kernel-tools \
         /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
-        /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
         /tmp/akmods-rpms/kmods/*xone*.rpm \
         /tmp/akmods-rpms/kmods/*openrazer*.rpm \
         /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
