@@ -30,7 +30,7 @@ jobs:
       matrix:
         image_flavor: [-nokmods, -main]
         base_name: [surface]
-        base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, mate, onyx]
+        base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, lazurite, mate, onyx]
         major_version: [38, 39]
         include:
           - major_version: 39
@@ -46,10 +46,14 @@ jobs:
             major_version: 39
           - image_flavor: -main
             major_version: 38
-          - image_flavor: -main
-            major_version: 37
+          # There is no Fedora 38 version of onyx or lazurite
           - base_image_name: onyx
             major_version: 38
+          - base_image_name: lazurite
+            major_version: 38
+          # There is no Fedora 39 of lxqt as lazurite replaced it
+          - base_image_name: lxqt
+            major_version: 39
     steps:
       # Checkout push-to-registry action GitHub repository
       - name: Checkout Push to Registry action
