@@ -31,8 +31,12 @@ jobs:
         image_flavor: [-nokmods, -main]
         base_name: [surface]
         base_image_name: [silverblue, kinoite, vauxite, sericea, base, lxqt, lazurite, mate, onyx]
-        major_version: [38, 39]
+        major_version: [38, 39, 40]
         include:
+          - major_version: 40
+            is_latest_version: false
+            is_stable_version: false
+            is_gts_version: false
           - major_version: 39
             is_latest_version: true
             is_stable_version: true
@@ -42,6 +46,8 @@ jobs:
             is_stable_version: true
             is_gts_version: true
         exclude:
+          - image_flavor: -nokmods
+            major_version: 40
           - image_flavor: -nokmods
             major_version: 39
           - image_flavor: -main
@@ -54,6 +60,9 @@ jobs:
           # There is no Fedora 39 of lxqt as lazurite replaced it
           - base_image_name: lxqt
             major_version: 39
+          # There is no Fedora 40 version of mate
+          - base_image_name: mate
+            major_version: 40
     steps:
       # Checkout push-to-registry action GitHub repository
       - name: Checkout Push to Registry action
